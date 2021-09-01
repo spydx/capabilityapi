@@ -1,7 +1,6 @@
 // Source: https://web.archive.org/web/20180120000131/http://www.zsck.co/writing/capability-based-apis.html
 
 use std::fmt;
-
 use sqlite::{Connection, Value};
 
 struct SQLite {
@@ -13,7 +12,6 @@ struct DatabaseError;
 
 struct Save<T>(pub T);
 struct Update<T>(pub T);
-struct Delete<T>(pub T);
 struct Find<T>(pub T);
 
 trait Capability<Operation> {
@@ -80,15 +78,24 @@ impl Capability<Find<User>> for SQLite {
         Ok(u)
     }
 }
-
 impl Capability<Update<User>> for SQLite {
     type Data = User;
     type Error = DatabaseError;
 
-    fn perform(&self, _: Update<User>) -> Result<Self::Data, Self::Error> {
-         
+    fn perform(&self, updated_user: Update<User>) -> Result<Self::Data, Self::Error> {
+        let mut cursor = self
+            .db
+            .prepare("UPDATE users SET password = ? WHERE name = ?")
+            .unwrap()
+            .into_cursor();
+        
+        cursor.bind(&[
+            Value::String(updated_user.0.password.to_string()), 
+            Value::String(updated_user.0.name.to_string())])
+            .unwrap();
+        
+        Ok(updated_user.0)
     }
-    
 }
 
 fn handle_save_user<DB>(db: &DB, user: User) -> Result<User, DatabaseError>
@@ -105,6 +112,13 @@ where
 {
     let user = User { name, password: "".to_string()};
     db.perform(Find(user))
+}
+
+fn handle_update_user<DB>(db: &DB, user: User) -> Result<User, DatabaseError> 
+where
+    DB: Capability<Update<User>, Data = User, Error = DatabaseError>,
+{
+    db.perform(Update(user))
 }
 
 fn main() {
@@ -131,7 +145,12 @@ fn main() {
 
     println!("Saved: {}", u);
 
-    let boisy = handle_find_user(&db, "boisy".to_string()).unwrap();
-    println!("Found: {} ", boisy);
+    let mut boisy = handle_find_user(&db, "boisy".to_string()).unwrap();
+    println!("Found: {}", &boisy);
+
+    boisy.password = "WoofWoof".to_string();
+
+    let updated = handle_update_user(&db, boisy).unwrap();
+    println!("Updated: {}", updated)
 
 }
