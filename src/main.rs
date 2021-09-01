@@ -1,7 +1,7 @@
 // Source: https://web.archive.org/web/20180120000131/http://www.zsck.co/writing/capability-based-apis.html
 
-use std::fmt;
 use sqlite::{Connection, Value};
+use std::fmt;
 
 struct SQLite {
     db: Connection,
@@ -10,9 +10,11 @@ struct SQLite {
 #[derive(Debug)]
 struct DatabaseError;
 
-struct Save<T>(pub T);
+
+struct Create<T>(pub T);
+struct Read<T>(pub T);
 struct Update<T>(pub T);
-struct Find<T>(pub T);
+struct Delete<T>(pub T);
 
 trait Capability<Operation> {
     type Data;
@@ -34,33 +36,35 @@ impl fmt::Display for User {
     }
 }
 
-impl Capability<Save<User>> for SQLite {
+impl Capability<Create<User>> for SQLite {
     type Data = User;
     type Error = DatabaseError;
 
-    fn perform(&self, save_user: Save<User>) -> Result<User, DatabaseError> {
+    fn perform(&self, save_user: Create<User>) -> Result<User, DatabaseError> {
         // insert user to database
-        let mut stmt = self
+        let mut cursor = self
             .db
             .prepare("INSERT INTO users (name, password) VALUES (?1, ?2)")
             .unwrap()
             .into_cursor();
 
-        stmt.bind(&[
-            Value::String(save_user.0.name.to_string()),
-            Value::String(save_user.0.password.to_string()),
-        ])
-        .unwrap();
+        cursor
+            .bind(&[
+                Value::String(save_user.0.name.to_string()),
+                Value::String(save_user.0.password.to_string()),
+            ])
+            .unwrap();
+        cursor.next().unwrap();
 
         Ok(save_user.0)
     }
 }
 
-impl Capability<Find<User>> for SQLite {
+impl Capability<Read<User>> for SQLite {
     type Data = User;
     type Error = DatabaseError;
 
-    fn perform(&self, find_user: Find<User>) -> Result<Self::Data, Self::Error> {
+    fn perform(&self, find_user: Read<User>) -> Result<Self::Data, Self::Error> {
         let mut cursor = self
             .db
             .prepare("SELECT name, password FROM users WHERE name = ?")
@@ -88,41 +92,90 @@ impl Capability<Update<User>> for SQLite {
             .prepare("UPDATE users SET password = ? WHERE name = ?")
             .unwrap()
             .into_cursor();
-        
-        cursor.bind(&[
-            Value::String(updated_user.0.password.to_string()), 
-            Value::String(updated_user.0.name.to_string())])
+
+        cursor
+            .bind(&[
+                Value::String(updated_user.0.password.to_string()),
+                Value::String(updated_user.0.name.to_string()),
+            ])
             .unwrap();
-        
+
+        cursor.next().unwrap();
+
         Ok(updated_user.0)
     }
 }
 
+impl Capability<Delete<User>> for SQLite {
+    type Data = ();
+    type Error = DatabaseError;
+
+    fn perform(&self, user_to_delete: Delete<User>) -> Result<Self::Data, Self::Error> {
+        let mut cursor = self.db.prepare("DELETE FROM users WHERE name = ?").unwrap();
+
+        cursor.bind(1, &*user_to_delete.0.name).unwrap();
+        cursor.next().unwrap();
+        Ok(())
+    }
+}
 fn handle_save_user<DB>(db: &DB, user: User) -> Result<User, DatabaseError>
 where
-    DB: Capability<Save<User>, Data = User, Error = DatabaseError>,
+    DB: Capability<Create<User>, Data = User, Error = DatabaseError>,
 {
-    db.perform(Save(user))
+    db.perform(Create(user))
 }
-
 
 fn handle_find_user<DB>(db: &DB, name: String) -> Result<User, DatabaseError>
 where
-    DB: Capability<Find<User>, Data = User, Error = DatabaseError>,
+    DB: Capability<Read<User>, Data = User, Error = DatabaseError>,
 {
-    let user = User { name, password: "".to_string()};
-    db.perform(Find(user))
+    let user = User {
+        name,
+        password: "".to_string(),
+    };
+    db.perform(Read(user))
 }
 
-fn handle_update_user<DB>(db: &DB, user: User) -> Result<User, DatabaseError> 
+fn handle_update_user<DB>(db: &DB, user: User) -> Result<User, DatabaseError>
 where
-    DB: Capability<Update<User>, Data = User, Error = DatabaseError>,
+    DB: CanUpdateUserData,
 {
     db.perform(Update(user))
 }
 
+fn handle_delete_user<DB>(db: &DB, name: String) -> Result<(), DatabaseError>
+where
+    DB: CanChangeAndDeleteUserData,
+{
+    let u = User {
+        name,
+        password: "".to_string(),
+    };
+    db.perform(Delete(u))
+}
+
+macro_rules! capability {
+    ($name:ident for $type:ty, composing $({$operation:ty, $d:ty, $e:ty}),+) => {
+        trait $name: $(Capability<$operation, Data = $d, Error = $e>+)+ {}
+
+        impl $name for $type {}
+    };
+}
+
+
+capability!(CanUpdateUserData for SQLite, 
+    composing { Update<User>, User, DatabaseError});
+
+capability!(CanChangeAndDeleteUserData for SQLite, 
+    composing   { Create<User>, User, DatabaseError},
+                { Update<User>, User, DatabaseError},
+                { Delete<User>, (), DatabaseError});
+
+capability!(CanReadUserData for SQLite, 
+            composing {Read<User>, User, DatabaseError});
+
 fn main() {
-    println!("Hello, world!");
+    println!("Hello, world!\n");
 
     let connection = sqlite::open(":memory:").unwrap();
 
@@ -143,14 +196,47 @@ fn main() {
 
     let u = handle_save_user(&db, user).unwrap();
 
-    println!("Saved: {}", u);
+    println!("Saved:");
+    println!("{}\n", u);
 
     let mut boisy = handle_find_user(&db, "boisy".to_string()).unwrap();
-    println!("Found: {}", &boisy);
+    println!("Found:");
+    println!("{}\n", &boisy);
 
     boisy.password = "WoofWoof".to_string();
 
     let updated = handle_update_user(&db, boisy).unwrap();
-    println!("Updated: {}", updated)
+    println!("Updated:");
+    println!("{}\n", updated);
 
+    display_db_content(&db);
+    handle_delete_user(&db, "kenneth".to_string()).unwrap();
+    display_db_content(&db);
+}
+
+fn display_db_content(con: &SQLite) {
+    let mut cursor = con
+        .db
+        .prepare("SELECT name, password FROM users")
+        .unwrap()
+        .into_cursor();
+    println!("DBContent: ");
+    while let Some(row) = cursor.next().unwrap() {
+        let u = User {
+            name: row[0].as_string().unwrap().to_string(),
+            password: row[1].as_string().unwrap().to_string(),
+        };
+        println!("{}", u)
+    }
+    println!();
+
+    cursor = con
+        .db
+        .prepare("SELECT COUNT(*) FROM users")
+        .unwrap()
+        .into_cursor();
+
+    while let Some(row) = cursor.next().unwrap() {
+        println!("Count: {}\n", row[0].as_integer().unwrap());
+    }
 }
