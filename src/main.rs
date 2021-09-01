@@ -120,14 +120,14 @@ impl Capability<Delete<User>> for SQLite {
 }
 fn handle_save_user<DB>(db: &DB, user: User) -> Result<User, DatabaseError>
 where
-    DB: Capability<Create<User>, Data = User, Error = DatabaseError>,
+    DB: CanCreateUserData,
 {
     db.perform(Create(user))
 }
 
 fn handle_find_user<DB>(db: &DB, name: String) -> Result<User, DatabaseError>
 where
-    DB: Capability<Read<User>, Data = User, Error = DatabaseError>,
+    DB: CanReadUserData,
 {
     let user = User {
         name,
@@ -163,6 +163,12 @@ macro_rules! capability {
 }
 
 
+capability!(CanCreateUserData for SQLite,
+    composing { Create<User>, User, DatabaseError});
+
+capability!(CanReadUserData for SQLite, 
+    composing {Read<User>, User, DatabaseError});
+
 capability!(CanUpdateUserData for SQLite, 
     composing { Update<User>, User, DatabaseError});
 
@@ -171,8 +177,7 @@ capability!(CanChangeAndDeleteUserData for SQLite,
                 { Update<User>, User, DatabaseError},
                 { Delete<User>, (), DatabaseError});
 
-capability!(CanReadUserData for SQLite, 
-            composing {Read<User>, User, DatabaseError});
+
 
 fn main() {
     println!("Hello, world!\n");
