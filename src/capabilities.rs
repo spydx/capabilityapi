@@ -1,9 +1,8 @@
 use crate::model::User;
 use sqlite::{Connection, Value};
 
-
 pub struct SQLite {
-     pub db: Connection,
+    pub db: Connection,
 }
 
 #[derive(Debug)]
@@ -19,7 +18,6 @@ pub trait Capability<Operation> {
     type Error;
     fn perform(&self, _: Operation) -> Result<Self::Data, Self::Error>;
 }
-
 
 macro_rules! capability {
     ($name:ident for $type:ty, composing $({$operation:ty, $d:ty, $e:ty}),+) => {
@@ -44,7 +42,6 @@ capability!(CanDeleteUserData for SQLite,
 capability!(CanReadAndChangeData for SQLite, 
     composing   { Read<User>, User, DatabaseError},
                 { Update<User>, User, DatabaseError});
-
 
 impl Capability<Create<User>> for SQLite {
     type Data = User;
@@ -92,6 +89,7 @@ impl Capability<Read<User>> for SQLite {
         Ok(u)
     }
 }
+
 impl Capability<Update<User>> for SQLite {
     type Data = User;
     type Error = DatabaseError;
@@ -128,7 +126,6 @@ impl Capability<Delete<User>> for SQLite {
         Ok(())
     }
 }
-
 
 pub fn handle_save_user<DB>(db: &DB, user: User) -> Result<User, DatabaseError>
 where

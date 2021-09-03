@@ -1,4 +1,3 @@
-
 use std::fmt;
 
 pub struct User {
@@ -14,4 +13,3 @@ impl fmt::Display for User {
         )
     }
 }
-

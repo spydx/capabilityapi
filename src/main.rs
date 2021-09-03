@@ -1,7 +1,10 @@
 // Source: https://web.archive.org/web/20180120000131/http://www.zsck.co/writing/capability-based-apis.html
 
+use capabilityapi::capabilities::{
+    display_db_content, handle_delete_user, handle_find_user, handle_save_user, handle_update_user,
+    SQLite,
+};
 use capabilityapi::model::User;
-use capabilityapi::capabilities::{SQLite, handle_save_user, handle_delete_user, handle_find_user, handle_update_user, display_db_content};
 
 fn main() {
     println!("Hello, world!\n");
