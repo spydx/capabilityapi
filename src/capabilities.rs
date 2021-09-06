@@ -102,7 +102,7 @@ impl Capability<Update<User>> for SQLite {
         let mut access = self.db.acquire().await.expect("Unable to get db");
 
         let r = sqlx::query!(
-            r#"UPDATE users SET password = ?1 WHERE name = ?"#,
+            r#"UPDATE users SET password = $1 WHERE name = $2"#,
             updated_user.0.password,
             updated_user.0.name
         )
@@ -122,10 +122,13 @@ impl Capability<Delete<User>> for SQLite {
     async fn perform(&self, user_to_delete: Delete<User>) -> Result<Self::Data, Self::Error> {
         let mut access = self.db.acquire().await.expect("Unable to get db");
 
-        let r = sqlx::query!(r#"DELETE FROM users WHERE name = ?"#, user_to_delete.0.name)
-            .execute(&mut access)
-            .await
-            .map_err(|e| e);
+        sqlx::query!(
+            r#"DELETE FROM users WHERE name = $1"#,
+            user_to_delete.0.name
+        )
+        .execute(&mut access)
+        .await
+        .map_err(|e| e);
 
         Ok(())
     }
@@ -168,7 +171,7 @@ where
 }
 
 pub async fn display_db_content(con: &SQLite) {
-    let users = sqlx::query!(r#"SELECT * FROM users"#)
+    let _users = sqlx::query!(r#"SELECT * FROM users"#)
         .fetch_all(&con.db)
         .await
         .map_err(|e| e);
@@ -191,7 +194,7 @@ pub async fn display_db_content(con: &SQLite) {
 }
 
 pub async fn get_db_content(con: &SQLite) -> Result<Vec<User>, DatabaseError> {
-    let res = sqlx::query!(r#"SELECT * FROM users"#)
+    let res = sqlx::query!(r#"SELECT name, password FROM users"#)
         .fetch_all(&con.db)
         .await
         .map_err(|e| e);
@@ -201,7 +204,7 @@ pub async fn get_db_content(con: &SQLite) -> Result<Vec<User>, DatabaseError> {
     for row in res {
         let user = User { name: row.name, password: row.password};
         users.push(user);
-    }
-    */
+    }*/
+
     Ok(users)
 }
