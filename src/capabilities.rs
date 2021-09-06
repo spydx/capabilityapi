@@ -194,17 +194,17 @@ pub async fn display_db_content(con: &SQLite) {
 }
 
 pub async fn get_db_content(con: &SQLite) -> Result<Vec<User>, DatabaseError> {
-    let res = sqlx::query!(r#"SELECT name, password FROM users"#)
+    let res = sqlx::query(r#"SELECT name, password FROM users"#)
         .fetch_all(&con.db)
         .await
         .map_err(|e| e);
 
     let users = vec![];
-    /*
+    /* 
     for row in res {
         let user = User { name: row.name, password: row.password};
         users.push(user);
-    }*/
-
+    }
+    */
     Ok(users)
 }
