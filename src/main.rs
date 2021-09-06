@@ -1,5 +1,8 @@
 // Source: https://web.archive.org/web/20180120000131/http://www.zsck.co/writing/capability-based-apis.html
-use capabilityapi::capabilities::{SQLite, display_db_content, get_db_content, handle_delete_user, handle_find_user, handle_save_user, handle_update_user};
+use capabilityapi::capabilities::{
+    display_db_content, get_db_content, handle_delete_user, handle_find_user, handle_save_user,
+    handle_update_user, SQLite,
+};
 use capabilityapi::model::User;
 
 use actix_web::{web, App, HttpServer, Responder};
@@ -8,7 +11,8 @@ use actix_web::{web, App, HttpServer, Responder};
 async fn main() -> Result<(), std::io::Error> {
     println!("Hello, world!\n");
 
-    let connection = SqlitePool::open(":memory:").unwrap();
+    //let connection = SqlitePool::open(":memory:").unwrap();
+    let connection = SqlitePool::connect("sqlite:cap.db").await?;
     sqlx::migrate!("./migrations")
         .run(&connection)
         .await
@@ -53,8 +57,8 @@ async fn main() -> Result<(), std::io::Error> {
     .await
 }
 
-/* 
-async fn get_user<DB>(user: web::Path<String>, pool: web::Data<SQLite>) -> impl Responder 
+/*
+async fn get_user<DB>(user: web::Path<String>, pool: web::Data<SQLite>) -> impl Responder
 where DB: CanReadUserData,
 {
     let parseduser: String = user.into_inner();
