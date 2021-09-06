@@ -1,9 +1,9 @@
 use crate::model::User;
-use sqlx::{Acquire, SqliteConnection};
+use sqlx::SqlitePool;
 use async_trait::async_trait;
 
 pub struct SQLite {
-    pub db: SqliteConnection,
+    pub db: SqlitePool,
 }
 
 #[derive(Debug)]

@@ -9,14 +9,10 @@ async fn main() -> Result<(), std::io::Error> {
     println!("Hello, world!\n");
 
     let connection = SqlitePool::open(":memory:").unwrap();
-
-    connection
-        .execute(
-            "CREATE TABLE users (name TEXT,password TEXT);
-            INSERT INTO users VALUES ('kenneth', 'password');
-            INSERT INTO users VALUES ('boisy', 'woof');",
-        )
-        .unwrap();
+    sqlx::migrate!("./migrations")
+        .run(&connection)
+        .await
+        .expect("Failed to run migrations");
 
     let db = SQLite { db: connection };
 
