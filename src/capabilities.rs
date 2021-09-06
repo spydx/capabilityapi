@@ -55,10 +55,10 @@ impl Capability<Create<User>> for SQLite {
 
         let r = sqlx::query!(
             r#"INSERT INTO users (name, password) VALUES (?1, ?2)"#,
-            save_user.0.name.to_string(),
-            save_user.0.password.to_string()
+            save_user.0.name,
+            save_user.0.password
         )
-        .excute(&mut access)
+        .execute(&mut access)
         .await
         .map_err(|e| e);
 
@@ -72,18 +72,23 @@ impl Capability<Read<User>> for SQLite {
     type Error = DatabaseError;
 
     async fn perform(&self, find_user: Read<User>) -> Result<Self::Data, Self::Error> {
-        let row = sqlx::query!(
-            r#"SELECT name, password FROM users WHERE name = ?"#,
-            find_user.0.name.to_string()
-        )
-        .fetch_one(self.db)
-        .await
-        .map_err(|e| e);
-        let u = User {
-            name: row[0].as_string().unwrap().to_string(),
-            password: row[1].as_string().unwrap().to_string(),
-        };
+        let userid = find_user.0.name;
+        /*let record = sqlx::query_as!(User,
+                        r#"SELECT * FROM users WHERE name = $1"#,
+                        userid,
+                    )
+                    .fetch_one(&self.db)
+                    .await
+                    .map_err(|e| e);
 
+                Ok(record.unwrap())
+        //        let user = User { name: record.name , password: record.password };
+          //      Ok(user)
+                */
+        let u = User {
+            name: userid,
+            password: "somestupidthing".to_string(),
+        };
         Ok(u)
     }
 }
@@ -97,9 +102,9 @@ impl Capability<Update<User>> for SQLite {
         let mut access = self.db.acquire().await.expect("Unable to get db");
 
         let r = sqlx::query!(
-            r#"UPDATE users SET pasword = ?1 WHERE name = ?"#,
-            updated_user.0.password.to_string(),
-            updated_user.0.name.to_string()
+            r#"UPDATE users SET password = ?1 WHERE name = ?"#,
+            updated_user.0.password,
+            updated_user.0.name
         )
         .execute(&mut access)
         .await
@@ -117,13 +122,10 @@ impl Capability<Delete<User>> for SQLite {
     async fn perform(&self, user_to_delete: Delete<User>) -> Result<Self::Data, Self::Error> {
         let mut access = self.db.acquire().await.expect("Unable to get db");
 
-        let r = sqlx::query!(
-            r#"DELETE FROM users WHERE name = ?"#,
-            user_to_delete.0.name.to_string()
-        )
-        .execute(&mut access)
-        .await
-        .map_err(|e| e);
+        let r = sqlx::query!(r#"DELETE FROM users WHERE name = ?"#, user_to_delete.0.name)
+            .execute(&mut access)
+            .await
+            .map_err(|e| e);
 
         Ok(())
     }
@@ -166,36 +168,40 @@ where
 }
 
 pub async fn display_db_content(con: &SQLite) {
-    let users = sqlx::query!(r#"SELECT name, password from users"#)
-        .fetch_all(con)
+    let users = sqlx::query!(r#"SELECT * FROM users"#)
+        .fetch_all(&con.db)
         .await
         .map_err(|e| e);
 
     println!("DBContent: ");
-    for u in users {
-        println!("{}", u);
-    }
+    /*
+    for row in users {
+        let user = User { name: row.name, password: row.password};
+        println!("{}", user);
+    }*/
     println!();
-
-    let count = sqlx::query!(r#"SELECT COUNT(*) FROM users"#)
-        .fetch_one(con)
+    /*
+    let row = sqlx::query!(r#"SELECT COUNT(*) FROM users"#)
+        .fetch_one(&con.db)
         .await
         .map_err(|e| e);
-
-    println!("Count: {}\n", count[0].as_integer().unwrap());
+    let count = row.map(|r| r.count).unwrap();
+    println!("Count: {}\n", count.unwrap());
+    */
 }
 
 pub async fn get_db_content(con: &SQLite) -> Result<Vec<User>, DatabaseError> {
-    let res = sqlx::query!(r#"SELECT name, password from users"#)
-        .fetch_all(con)
+    let res = sqlx::query!(r#"SELECT * FROM users"#)
+        .fetch_all(&con.db)
         .await
         .map_err(|e| e);
 
-    let mut users = Vec::<User>::new();
-
-    for u in res {
-        users.push(u);
+    let users = vec![];
+    /*
+    for row in res {
+        let user = User { name: row.name, password: row.password};
+        users.push(user);
     }
-
+    */
     Ok(users)
 }

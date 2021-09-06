@@ -4,6 +4,7 @@ use capabilityapi::capabilities::{
     handle_update_user, SQLite,
 };
 use capabilityapi::model::User;
+use sqlx::SqlitePool;
 
 use actix_web::{web, App, HttpServer, Responder};
 
@@ -12,7 +13,9 @@ async fn main() -> Result<(), std::io::Error> {
     println!("Hello, world!\n");
 
     //let connection = SqlitePool::open(":memory:").unwrap();
-    let connection = SqlitePool::connect("sqlite:cap.db").await?;
+    let connection = SqlitePool::connect("sqlite:cap.db")
+        .await
+        .expect("Failed to get db con");
     sqlx::migrate!("./migrations")
         .run(&connection)
         .await
@@ -25,24 +28,33 @@ async fn main() -> Result<(), std::io::Error> {
         password: "pffpff".to_string(),
     };
 
-    let u = handle_save_user(&db, user).unwrap();
+    let u = handle_save_user(&db, user)
+        .await
+        .expect("Failed to save user");
 
     println!("Saved:");
     println!("{}\n", u);
 
-    let mut boisy = handle_find_user(&db, "boisy".to_string()).unwrap();
+    let mut boisy = handle_find_user(&db, "boisy".to_string())
+        .await
+        .expect("Failed to find user");
     println!("Found:");
     println!("{}\n", &boisy);
 
     boisy.password = "WoofWoof".to_string();
 
-    let updated = handle_update_user(&db, boisy).unwrap();
+    let updated = handle_update_user(&db, boisy)
+        .await
+        .expect("Failed to update user");
     println!("Updated:");
     println!("{}\n", updated);
 
-    display_db_content(&db);
-    handle_delete_user(&db, "kenneth".to_string()).unwrap();
-    display_db_content(&db);
+    println!("Deleted:");
+    display_db_content(&db).await;
+    handle_delete_user(&db, "kenneth".to_string())
+        .await
+        .expect("Failed to delete user");
+    display_db_content(&db).await;
 
     let pool = web::Data::new(db);
 
@@ -69,7 +81,9 @@ where DB: CanReadUserData,
 */
 
 async fn get_users(pool: web::Data<SQLite>) -> impl Responder {
-    let users: Vec<User> = get_db_content(&pool).unwrap();
+    let users: Vec<User> = get_db_content(&pool)
+        .await
+        .expect("failed to get db content");
 
     let json = serde_json::to_string(&users).unwrap();
     format!("{}", json)
