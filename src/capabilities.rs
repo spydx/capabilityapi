@@ -1,8 +1,9 @@
 use crate::model::User;
-use sqlite::{Connection, Value};
+use sqlx::{SqliteConnection, sqlite};
+use async_trait::async_trait;
 
 pub struct SQLite {
-    pub db: Connection,
+    pub db: SqliteConnection,
 }
 
 #[derive(Debug)]
@@ -13,10 +14,11 @@ pub struct Read<T>(pub T);
 pub struct Update<T>(pub T);
 pub struct Delete<T>(pub T);
 
+#[async_trait]
 pub trait Capability<Operation> {
     type Data;
     type Error;
-    fn perform(&self, _: Operation) -> Result<Self::Data, Self::Error>;
+    async fn perform(&self, _: Operation) -> Result<Self::Data, Self::Error>;
 }
 
 macro_rules! capability {
@@ -43,44 +45,36 @@ capability!(CanReadAndChangeData for SQLite,
     composing   { Read<User>, User, DatabaseError},
                 { Update<User>, User, DatabaseError});
 
+#[async_trait]
 impl Capability<Create<User>> for SQLite {
     type Data = User;
     type Error = DatabaseError;
 
-    fn perform(&self, save_user: Create<User>) -> Result<User, DatabaseError> {
-        // insert user to database
-        let mut cursor = self
-            .db
-            .prepare("INSERT INTO users (name, password) VALUES (?1, ?2)")
-            .unwrap()
-            .into_cursor();
+    async fn perform(&self, save_user: Create<User>) -> Result<User, DatabaseError> {
 
-        cursor
-            .bind(&[
-                Value::String(save_user.0.name.to_string()),
-                Value::String(save_user.0.password.to_string()),
-            ])
-            .unwrap();
-        cursor.next().unwrap();
+        let r = sqlx::query!(r#"INSERT INTO users (name, password) VALUES (?1, ?2)"#, 
+            save_user.0.name.to_string(), 
+            save_user.0.password.to_string())
+            .excute(&mut self.db)
+            .await
+            .map_err(|e| e);
 
         Ok(save_user.0)
     }
 }
 
+#[async_trait]
 impl Capability<Read<User>> for SQLite {
     type Data = User;
     type Error = DatabaseError;
 
-    fn perform(&self, find_user: Read<User>) -> Result<Self::Data, Self::Error> {
-        let mut cursor = self
-            .db
-            .prepare("SELECT name, password FROM users WHERE name = ?")
-            .unwrap()
-            .into_cursor();
-        cursor.bind(&[Value::String(find_user.0.name)]).unwrap();
+    async fn perform(&self, find_user: Read<User>) -> Result<Self::Data, Self::Error> {
 
-        let row = cursor.next().unwrap().unwrap();
-
+        let row = sqlx::query!(r#"SELECT name, password FROM users WHERE name = ?"#,
+                find_user.0.name)
+                .fetch_one(self.db)
+                .await
+                .map_err(|e| e);        
         let u = User {
             name: row[0].as_string().unwrap().to_string(),
             password: row[1].as_string().unwrap().to_string(),
@@ -90,51 +84,49 @@ impl Capability<Read<User>> for SQLite {
     }
 }
 
+#[async_trait]
 impl Capability<Update<User>> for SQLite {
     type Data = User;
     type Error = DatabaseError;
 
-    fn perform(&self, updated_user: Update<User>) -> Result<Self::Data, Self::Error> {
-        let mut cursor = self
-            .db
-            .prepare("UPDATE users SET password = ? WHERE name = ?")
-            .unwrap()
-            .into_cursor();
+    async fn perform(&self, updated_user: Update<User>) -> Result<Self::Data, Self::Error> {
 
-        cursor
-            .bind(&[
-                Value::String(updated_user.0.password.to_string()),
-                Value::String(updated_user.0.name.to_string()),
-            ])
-            .unwrap();
-
-        cursor.next().unwrap();
+        let r = sqlx::query!(r#"UPDATE users SET pasword = ?1 WHERE name = ?"#,
+                updated_user.0.password.to_string(),
+                updated_user.0.name.to_string())
+            .execute(self.db)
+            .await
+            .map_err(|e| e);
 
         Ok(updated_user.0)
     }
 }
 
+#[async_trait]
 impl Capability<Delete<User>> for SQLite {
     type Data = ();
     type Error = DatabaseError;
 
-    fn perform(&self, user_to_delete: Delete<User>) -> Result<Self::Data, Self::Error> {
-        let mut cursor = self.db.prepare("DELETE FROM users WHERE name = ?").unwrap();
+    async fn perform(&self, user_to_delete: Delete<User>) -> Result<Self::Data, Self::Error> {
 
-        cursor.bind(1, &*user_to_delete.0.name).unwrap();
-        cursor.next().unwrap();
+        let r = sqlx::query!(r#"DELETE FROM users WHERE name = ?"#,
+            user_to_delete.0.name)
+            .execute(self.db)
+            .await
+            .map_err(|e| e);
+
         Ok(())
     }
 }
 
-pub fn handle_save_user<DB>(db: &DB, user: User) -> Result<User, DatabaseError>
+pub async fn handle_save_user<DB>(db: &DB, user: User) -> Result<User, DatabaseError>
 where
     DB: CanCreateUserData,
 {
-    db.perform(Create(user))
+    db.perform(Create(user)).await
 }
 
-pub fn handle_find_user<DB>(db: &DB, name: String) -> Result<User, DatabaseError>
+pub async fn handle_find_user<DB>(db: &DB, name: String) -> Result<User, DatabaseError>
 where
     DB: CanReadUserData,
 {
@@ -142,17 +134,17 @@ where
         name,
         password: "".to_string(),
     };
-    db.perform(Read(user))
+    db.perform(Read(user)).await
 }
 
-pub fn handle_update_user<DB>(db: &DB, user: User) -> Result<User, DatabaseError>
+pub async fn handle_update_user<DB>(db: &DB, user: User) -> Result<User, DatabaseError>
 where
     DB: CanUpdateUserData,
 {
-    db.perform(Update(user))
+    db.perform(Update(user)).await
 }
 
-pub fn handle_delete_user<DB>(db: &DB, name: String) -> Result<(), DatabaseError>
+pub async fn handle_delete_user<DB>(db: &DB, name: String) -> Result<(), DatabaseError>
 where
     DB: CanDeleteUserData,
 {
@@ -160,48 +152,41 @@ where
         name,
         password: "".to_string(),
     };
-    db.perform(Delete(u))
+    db.perform(Delete(u)).await
 }
 
-pub fn display_db_content(con: &SQLite) {
-    let mut cursor = con
-        .db
-        .prepare("SELECT name, password FROM users")
-        .unwrap()
-        .into_cursor();
+pub async fn display_db_content(con: &SQLite) {
+
+    let users = sqlx::query!(r#"SELECT name, password from users"#)
+        .fetch_all(con)
+        .await
+        .map_err(|e| e);
+    
     println!("DBContent: ");
-    while let Some(row) = cursor.next().unwrap() {
-        let u = User {
-            name: row[0].as_string().unwrap().to_string(),
-            password: row[1].as_string().unwrap().to_string(),
-        };
-        println!("{}", u)
+    for u in users {
+        println!("{}", u);
     }
     println!();
 
-    cursor = con
-        .db
-        .prepare("SELECT COUNT(*) FROM users")
-        .unwrap()
-        .into_cursor();
+    let count = sqlx::query!(r#"SELECT COUNT(*) FROM users"#)
+        .fetch_one(con)
+        .await
+        .map_err(|e| e);
 
-    while let Some(row) = cursor.next().unwrap() {
-        println!("Count: {}\n", row[0].as_integer().unwrap());
-    }
+    println!("Count: {}\n", count[0].as_integer().unwrap());
+
 }
 
-pub fn get_db_content(con: &SQLite) -> Result<Vec<User>, DatabaseError> {
-    let mut cursor = con
-        .db
-        .prepare("SELECT name, password FROM users")
-        .unwrap()
-        .into_cursor();
+pub async fn get_db_content(con: &SQLite) -> Result<Vec<User>, DatabaseError> {
+
+    let res = sqlx::query!(r#"SELECT name, password from users"#)
+        .fetch_all(con)
+        .await
+        .map_err(|e| e);
+
     let mut users = Vec::<User>::new();
-    while let Some(row) = cursor.next().unwrap() {
-        let u = User {
-            name: row[0].as_string().unwrap().to_string(),
-            password: row[1].as_string().unwrap().to_string(),
-        };
+
+    for u in res {
         users.push(u);
     }
 
