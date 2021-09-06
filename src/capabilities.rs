@@ -189,3 +189,21 @@ pub fn display_db_content(con: &SQLite) {
         println!("Count: {}\n", row[0].as_integer().unwrap());
     }
 }
+
+pub fn get_db_content(con: &SQLite) -> Result<Vec<User>, DatabaseError> {
+    let mut cursor = con
+        .db
+        .prepare("SELECT name, password FROM users")
+        .unwrap()
+        .into_cursor();
+    let mut users = Vec::<User>::new();
+    while let Some(row) = cursor.next().unwrap() {
+        let u = User {
+            name: row[0].as_string().unwrap().to_string(),
+            password: row[1].as_string().unwrap().to_string(),
+        };
+        users.push(u);
+    }
+
+    Ok(users)
+}

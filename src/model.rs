@@ -1,5 +1,6 @@
+use serde::{Deserialize, Serialize};
 use std::fmt;
-
+#[derive(Deserialize, Serialize)]
 pub struct User {
     pub name: String,
     pub password: String,
