@@ -54,7 +54,7 @@ impl Capability<Create<User>> for SQLite {
         let mut access = self.db.acquire().await.expect("Unable to get db");
 
         let r = sqlx::query!(
-            r#"INSERT INTO users (name, password) VALUES (?1, ?2)"#,
+            r#"INSERT INTO users (name, password) VALUES ($1, $2)"#,
             save_user.0.name,
             save_user.0.password
         )
@@ -171,7 +171,7 @@ where
 }
 
 pub async fn display_db_content(con: &SQLite) {
-    let _users = sqlx::query!(r#"SELECT * FROM users"#)
+    let _users = sqlx::query(r#"SELECT * FROM users"#)
         .fetch_all(&con.db)
         .await
         .map_err(|e| e);

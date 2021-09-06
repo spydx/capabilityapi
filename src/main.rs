@@ -85,6 +85,6 @@ async fn get_users(pool: web::Data<SQLite>) -> impl Responder {
         .await
         .expect("failed to get db content");
 
-    let json = serde_json::to_string(&users).unwrap();
-    format!("{}", json)
+    serde_json::to_string(&users).unwrap()
+    
 }
