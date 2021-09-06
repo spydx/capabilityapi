@@ -1,5 +1,5 @@
 use crate::model::User;
-use sqlx::{SqliteConnection, sqlite};
+use sqlx::{Acquire, SqliteConnection};
 use async_trait::async_trait;
 
 pub struct SQLite {
@@ -51,11 +51,12 @@ impl Capability<Create<User>> for SQLite {
     type Error = DatabaseError;
 
     async fn perform(&self, save_user: Create<User>) -> Result<User, DatabaseError> {
+        let mut access = self.db.acquire().await.expect("Unable to get db");
 
         let r = sqlx::query!(r#"INSERT INTO users (name, password) VALUES (?1, ?2)"#, 
             save_user.0.name.to_string(), 
             save_user.0.password.to_string())
-            .excute(&mut self.db)
+            .excute(&mut access)
             .await
             .map_err(|e| e);
 
@@ -69,9 +70,9 @@ impl Capability<Read<User>> for SQLite {
     type Error = DatabaseError;
 
     async fn perform(&self, find_user: Read<User>) -> Result<Self::Data, Self::Error> {
-
+        
         let row = sqlx::query!(r#"SELECT name, password FROM users WHERE name = ?"#,
-                find_user.0.name)
+                find_user.0.name.to_string())
                 .fetch_one(self.db)
                 .await
                 .map_err(|e| e);        
@@ -90,11 +91,12 @@ impl Capability<Update<User>> for SQLite {
     type Error = DatabaseError;
 
     async fn perform(&self, updated_user: Update<User>) -> Result<Self::Data, Self::Error> {
+        let mut access = self.db.acquire().await.expect("Unable to get db");
 
         let r = sqlx::query!(r#"UPDATE users SET pasword = ?1 WHERE name = ?"#,
                 updated_user.0.password.to_string(),
                 updated_user.0.name.to_string())
-            .execute(self.db)
+            .execute(&mut access)
             .await
             .map_err(|e| e);
 
@@ -108,10 +110,11 @@ impl Capability<Delete<User>> for SQLite {
     type Error = DatabaseError;
 
     async fn perform(&self, user_to_delete: Delete<User>) -> Result<Self::Data, Self::Error> {
+        let mut access = self.db.acquire().await.expect("Unable to get db");
 
         let r = sqlx::query!(r#"DELETE FROM users WHERE name = ?"#,
-            user_to_delete.0.name)
-            .execute(self.db)
+            user_to_delete.0.name.to_string())
+            .execute(&mut access)
             .await
             .map_err(|e| e);
 

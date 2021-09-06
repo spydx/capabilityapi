@@ -8,7 +8,7 @@ use actix_web::{web, App, HttpServer, Responder};
 async fn main() -> Result<(), std::io::Error> {
     println!("Hello, world!\n");
 
-    let connection = sqlite::open(":memory:").unwrap();
+    let connection = SqlitePool::open(":memory:").unwrap();
 
     connection
         .execute(
