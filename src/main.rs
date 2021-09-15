@@ -1,9 +1,9 @@
+use actix_web::middleware::Logger;
 use actix_web::{
     web::{self},
     App, HttpServer, Responder,
 };
-use actix_web::middleware::Logger;
-use capabilityapi::capabilities::{handle_find_user, handle_find_all_users, Database};
+use capabilityapi::capabilities::{handle_find_all_users, handle_find_user, Database};
 use sqlx::Pool;
 
 #[actix_web::main]
@@ -12,7 +12,7 @@ async fn main() -> Result<(), std::io::Error> {
     let connection = Pool::connect("sqlite:cap.db")
         .await
         .expect("Failed to get db");
-    
+
     std::env::set_var("RUST_LOG", "actix_web=info");
     let mut log = env_logger::Builder::from_default_env();
     log.init();
@@ -49,6 +49,8 @@ async fn get_user(user: web::Path<String>, pool: web::Data<Database>) -> impl Re
 
 async fn get_all_users(pool: web::Data<Database>) -> impl Responder {
     let db = pool.get_ref();
-    let users = handle_find_all_users(db).await.expect("Faild to find users");
+    let users = handle_find_all_users(db)
+        .await
+        .expect("Faild to find users");
     serde_json::to_string(&users).unwrap()
 }
