@@ -31,18 +31,16 @@ pub struct NewUser {
 pub struct UserName(String);
 pub struct UserPassword(String);
 
-
 impl TryInto<NewUser> for FormData {
     type Error = String;
 
     fn try_into(self) -> Result<NewUser, Self::Error> {
-        
         let vname = validate(self.name).expect("failed to validate name");
         let vpass = validate(self.password).expect("failed to validate pass");
-        
+
         let name = UserName(vname);
         let password = UserPassword(vpass);
-        
+
         Ok(NewUser { name, password })
     }
 }
@@ -54,7 +52,7 @@ fn validate(s: String) -> Result<String, String> {
     let contains_forbidden_char = s.chars().any(|c| forbidden_char.contains(&c));
 
     if is_empty_or_whitespace || is_too_long || contains_forbidden_char {
-        Err(format!("{} not a valid username",s))
+        Err(format!("{} not a valid username", s))
     } else {
         Ok(s)
     }
@@ -96,6 +94,7 @@ mod user_tests {
     }
 
     #[test]
+
     fn name_containing_an_invalid_char_is_rejected() {
         for name in &['/', '(', ')', '"', '<', '>', '\\', '{', '}'] {
             let name = name.to_string();
