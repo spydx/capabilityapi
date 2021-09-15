@@ -11,8 +11,10 @@ actix-http = "3.0.0-beta.9"
 actix-web = "4.0.0-beta.8"
 anyhow = "1.0.43"
 async-trait = "0.1.51"
+claim = "0.5.0"
 env_logger = "0.9.0"
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.67"
 sqlx = { version = "0.5.7", features = ["migrate","runtime-actix-rustls","offline","macros", "sqlite"]}
 tokio = { version = "1.11.0", features = ["full"] }
+unicode-segmentation = "1.8.0"
