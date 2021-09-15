@@ -36,6 +36,9 @@ capability!(CanReadUserData for Database,
 capability!(CanReadAllUserData for Database,
     composing{ ReadAll<()>, Vec<User>, DatabaseError});
 
+capability!(CanCreateUserData for Database, 
+    composing{ Create<User>, User, DatabaseError});
+
 #[async_trait]
 impl Capability<Read<String>> for Database {
     type Data = User;
@@ -59,6 +62,13 @@ impl Capability<Read<String>> for Database {
     }
 }
 
+pub async fn handle_find_user<DB>(db: &DB, name: String) -> Result<User, DatabaseError>
+where
+    DB: CanReadUserData,
+{
+    db.perform(Read(name)).await
+}
+
 #[async_trait]
 impl Capability<ReadAll<()>> for Database {
     type Data = Vec<User>;
@@ -75,9 +85,7 @@ impl Capability<ReadAll<()>> for Database {
             let name = row.name.unwrap();
             let password = row.password.unwrap();
 
-            let u = User {
-                name,password
-            };
+            let u = User { name, password };
 
             users.push(u);
         }
@@ -86,20 +94,43 @@ impl Capability<ReadAll<()>> for Database {
     }
 }
 
-pub async fn handle_find_user<DB>(db: &DB, name: String) -> Result<User, DatabaseError>
-where
-    DB: CanReadUserData,
-{
-    db.perform(Read(name)).await
-}
-
 pub async fn handle_find_all_users<DB>(db: &DB) -> Result<Vec<User>, DatabaseError>
 where
     DB: CanReadAllUserData,
 {
-
     db.perform(ReadAll(())).await
 }
+
+#[async_trait]
+impl Capability<Create<User>> for Database {
+    type Data = User;
+    type Error = DatabaseError;
+
+    async fn perform(&self, createuser: Create<User>) -> Result<Self::Data, Self::Error> {
+        let user = createuser.0;
+
+        let r = sqlx::query!(
+            r#"INSERT INTO users (name, password) VALUES ($1, $2)"#,
+            user.name,
+            user.password
+        )
+        .execute(&self.db)
+        .await
+        .map_err(|e| e);
+        match r {
+            Ok(_) => Ok(user),
+            _ => Err(DatabaseError),
+        }
+    }
+}
+
+pub async fn handle_create_user<DB>(db: &DB, createuser: User) -> Result<User, DatabaseError>
+where
+    DB: CanCreateUserData,
+{
+    db.perform(Create(createuser)).await
+}
+
 /*
 capability!(CanCreateUserData for SQLite,
     composing { Create<User>, User, DatabaseError});
