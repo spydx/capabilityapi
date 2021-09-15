@@ -1,7 +1,31 @@
 {
   "db": "SQLite",
-  "26e7e05427bc7dabcd7815d27764fda2baf4cfe60a2d2d6ee2a1f773dccbbce2": {
-    "query": "SELECT * FROM users",
+  "d08992cf2c132fedbed21b94d545e154fa2a7a2a2bf79fd033341d1bb5a6c0f2": {
+    "query": "SELECT * FROM users WHERE name = $1",
+    "describe": {
+      "columns": [
+        {
+          "name": "name",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "password",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": [
+        true,
+        true
+      ]
+    }
+  },
+  "f34f2ab5d886223530c88df72229d9c56d69117e7739a4d003a1237c111a30fd": {
+    "query": "SELECT name, password FROM users",
     "describe": {
       "columns": [
         {
@@ -22,36 +46,6 @@
         true,
         true
       ]
-    }
-  },
-  "52a6d5349c837f86c16cf4dbd7f87e3b3abd6e3c8ec59b3afecdca22ac90a573": {
-    "query": "DELETE FROM users WHERE name = $1",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Right": 1
-      },
-      "nullable": []
-    }
-  },
-  "61851648f5851400afe63998da58db04e0bd375cc947636e522683e6d3d04f06": {
-    "query": "UPDATE users SET password = $1 WHERE name = $2",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Right": 2
-      },
-      "nullable": []
-    }
-  },
-  "c2a3c8b4ea84670599d507a770dbb6a7136ce4c6df5a6a32fa7f5b095a4a0f6c": {
-    "query": "INSERT INTO users (name, password) VALUES (?1, ?2)",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Right": 2
-      },
-      "nullable": []
     }
   }
 }
