@@ -158,4 +158,4 @@ Cargo.lock
 
 # End of https://www.toptal.com/developers/gitignore/api/rust,intellij+all,visualstudiocode,macos
 # Database for project
-cap.db
+cap.db*
