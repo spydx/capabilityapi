@@ -2,6 +2,7 @@ use actix_web::{
     web::{self},
     App, HttpServer, Responder,
 };
+use actix_web::middleware::Logger;
 use capabilityapi::capabilities::{handle_find_user, handle_find_all_users, Database};
 use sqlx::Pool;
 
@@ -11,6 +12,10 @@ async fn main() -> Result<(), std::io::Error> {
     let connection = Pool::connect("sqlite:cap.db")
         .await
         .expect("Failed to get db");
+    
+    std::env::set_var("RUST_LOG", "actix_web=info");
+    let mut log = env_logger::Builder::from_default_env();
+    log.init();
 
     sqlx::migrate!("./migrations")
         .run(&connection)
@@ -23,6 +28,7 @@ async fn main() -> Result<(), std::io::Error> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .route("/users/", web::get().to(get_all_users))
             .route("/users/{id}", web::get().to(get_user))
             .app_data(pool.clone())
