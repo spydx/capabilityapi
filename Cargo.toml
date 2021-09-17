@@ -12,6 +12,7 @@ actix-web = "4.0.0-beta.8"
 anyhow = "1.0.43"
 async-trait = "0.1.51"
 claim = "0.5.0"
+config = "0.11.0"
 env_logger = "0.9.0"
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.67"

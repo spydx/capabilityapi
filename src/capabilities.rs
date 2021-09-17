@@ -1,5 +1,5 @@
 use crate::database::{Database, DatabaseError};
-use crate::model::User;
+use crate::domain::model::User;
 use async_trait::async_trait;
 
 pub struct Create<T>(pub T);
