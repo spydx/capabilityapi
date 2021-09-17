@@ -1,3 +1,4 @@
+use crate::configuration::Settings;
 use sqlx::pool::Pool;
 use sqlx::sqlite::Sqlite;
 
@@ -5,16 +6,12 @@ pub struct Database {
     pub db: Pool<Sqlite>,
 }
 
-pub struct Settings {
-    pub databasename: String,
-}
-
 #[derive(Debug)]
 pub struct DatabaseError;
 
 impl Database {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
-        let connection = Pool::connect(&configuration.databasename)
+        let connection = Pool::connect(&configuration.database.name)
             .await
             .expect("Failed to connect to database");
 
