@@ -7,8 +7,6 @@ pub struct Application {
 
 impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
-
-
         todo!()
     }
 }

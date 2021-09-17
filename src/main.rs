@@ -3,7 +3,7 @@ use actix_web::{
     web::{self},
     App, HttpServer,
 };
-use capabilityapi::configuration::{DatabaseSettings, Settings};
+use capabilityapi::configuration::get_configuration;
 use capabilityapi::database::Database;
 use capabilityapi::routes;
 
@@ -15,11 +15,7 @@ async fn main() -> Result<(), std::io::Error> {
     let mut log = env_logger::Builder::from_default_env();
     log.init();
 
-    let configuration = Settings {
-        database: DatabaseSettings {
-            name: "sqlite:cap.db".to_string(),
-        },
-    };
+    let configuration = get_configuration().expect("Failed to get config");
 
     let db = Database::build(configuration)
         .await
