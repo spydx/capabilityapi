@@ -1,19 +1,58 @@
-use actix_web::Server;
+use crate::configuration::Settings;
+use crate::database::Database;
+use crate::routes;
+use actix_web::dev::Server;
+use actix_web::middleware::Logger;
+use actix_web::web::Data;
+use actix_web::{web, App, HttpServer};
+use std::net::TcpListener;
 
 pub struct Application {
     port: u16,
-    server: Server,   
+    server: Server,
 }
 
 impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
-        todo!()
+        std::env::set_var("RUST_LOG", "actix_web=info");
+        let mut log = env_logger::Builder::from_default_env();
+        log.init();
+
+        let db = Database::build(&configuration)
+            .await
+            .expect("Failed to create database");
+
+        let address = &configuration.server_string();
+
+        let listener = TcpListener::bind(address).expect("Failed to allocate host address");
+        let port = listener.local_addr().unwrap().port();
+
+        let pool = web::Data::new(db);
+        let server = configure(listener, pool)?;
+
+        Ok(Self { port, server })
+    }
+
+    pub fn port(&self) -> u16 {
+        self.port
+    }
+
+    pub async fn run(self) -> Result<(), std::io::Error> {
+        self.server.await
     }
 }
 
-pub fn run<T>(
-    listner: TcpListner,
-    db_pool: Pool<T>,
-) -> Result<Server, std::io::Error> {
-    todo!()
+pub fn configure(address: TcpListener, database: Data<Database>) -> Result<Server, std::io::Error> {
+    let server = HttpServer::new(move || {
+        App::new()
+            .wrap(Logger::default())
+            .route("/users/", web::get().to(routes::users::get_all_users))
+            .route("/users/", web::post().to(routes::users::create_new_user))
+            .route("/users/{id}", web::get().to(routes::users::get_user))
+            .app_data(database.clone())
+    })
+    .listen(address)?
+    .run();
+
+    Ok(server)
 }

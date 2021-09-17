@@ -35,4 +35,7 @@ impl Settings {
     pub fn server_string(&self) -> String {
         format!("{}:{}", self.application.host, self.application.port)
     }
+    pub fn http_address(&self) -> String {
+        format!("http://{}:{}", self.application.host, self.application.port)
+    }
 }
