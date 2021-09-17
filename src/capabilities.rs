@@ -25,11 +25,13 @@ macro_rules! capability {
 
 capability!(CanReadUserData for Database,
     composing {Read<String>, User, DatabaseError});
+
 capability!(CanReadAllUserData for Database,
     composing{ ReadAll<()>, Vec<User>, DatabaseError});
 
 capability!(CanCreateUserData for Database,
     composing{ Create<User>, User, DatabaseError});
+
 
 #[async_trait]
 impl Capability<Read<String>> for Database {
@@ -98,8 +100,8 @@ impl Capability<Create<User>> for Database {
     type Data = User;
     type Error = DatabaseError;
 
-    async fn perform(&self, createuser: Create<User>) -> Result<Self::Data, Self::Error> {
-        let user = createuser.0;
+    async fn perform(&self, create_user: Create<User>) -> Result<Self::Data, Self::Error> {
+        let user = create_user.0;
 
         let r = sqlx::query!(
             r#"INSERT INTO users (name, password) VALUES ($1, $2)"#,
@@ -123,9 +125,35 @@ where
     db.perform(Create(createuser)).await
 }
 
+
+
 /*
-capability!(CanCreateUserData for SQLite,
-    composing { Create<User>, User, DatabaseError});
+
+#[async_trait]
+impl Capability<Delete<User>> for Database {
+    type Data = ();
+    type Error = DatabaseError;
+
+    async fn perform(&self, deleteuser: Delete<User>) -> Result<Self::Data, Self::Error> {
+        let user = deleteuser.0;
+
+        sqlx::query!(r#"DELETE FROM users WHERE name = $1"#, user.name)
+            .execute(&self.db)
+            .await
+            .map_err(|e| e);
+
+
+    }
+}
+
+pub async fn handle_delete_user<DB>(db: &DB, user_to_delete: User) -> Result<(), DatabaseError>
+where
+    DB: CanDeleteUserData,
+{
+    db.perform(Delete(user_to_delete)).await
+}
+*/
+/*
 
 capability!(CanUpdateUserData for SQLite,
     composing { Update<User>, User, DatabaseError});
@@ -137,26 +165,6 @@ capability!(CanReadAndChangeData for SQLite,
     composing   { Read<User>, User, DatabaseError},
                 { Update<User>, User, DatabaseError});
 
-#[async_trait]
-impl Capability<Create<User>> for SQLite {
-    type Data = User;
-    type Error = DatabaseError;
-
-    async fn perform(&self, save_user: Create<User>) -> Result<User, DatabaseError> {
-        let mut access = self.db.acquire().await.expect("Unable to get db");
-
-        let r = sqlx::query!(
-            r#"INSERT INTO users (name, password) VALUES ($1, $2)"#,
-            save_user.0.name,
-            save_user.0.password
-        )
-        .execute(&mut access)
-        .await
-        .map_err(|e| e);
-
-        Ok(save_user.0)
-    }
-}
 */
 
 /*

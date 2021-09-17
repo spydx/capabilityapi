@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use unicode_segmentation::UnicodeSegmentation;
+use std::convert::TryInto;
 
 #[derive(Deserialize, Serialize)]
 pub struct User {

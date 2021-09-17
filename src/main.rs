@@ -15,7 +15,6 @@ async fn main() -> Result<(), std::io::Error> {
     let mut log = env_logger::Builder::from_default_env();
     log.init();
 
-
     let configuration = Settings {
         database: DatabaseSettings {
             name: "sqlite:cap.db".to_string(),
@@ -25,13 +24,14 @@ async fn main() -> Result<(), std::io::Error> {
     let db = Database::build(configuration)
         .await
         .expect("Failed to create database");
-    
+
     let pool = web::Data::new(db);
 
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
             .route("/users/", web::get().to(routes::users::get_all_users))
+            .route("/users/", web::post().to(routes::users::create_new_user))
             .route("/users/{id}", web::get().to(routes::users::get_user))
             .app_data(pool.clone())
     })
