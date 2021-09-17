@@ -3,26 +3,24 @@ use actix_web::{
     web::{self},
     App, HttpServer, Responder,
 };
-use capabilityapi::capabilities::{handle_find_all_users, handle_find_user, Database};
-use sqlx::Pool;
+use capabilityapi::capabilities::{handle_find_all_users, handle_find_user};
+use capabilityapi::database::{Database, Settings};
 
 #[actix_web::main]
 async fn main() -> Result<(), std::io::Error> {
     println!("Hello, world!\n");
-    let connection = Pool::connect("sqlite:cap.db")
+
+    let configuration = Settings {
+        databasename: "sqlite:cap.db".to_string(),
+    };
+
+    let db = Database::build(configuration)
         .await
-        .expect("Failed to get db");
+        .expect("Failed to create database");
 
     std::env::set_var("RUST_LOG", "actix_web=info");
     let mut log = env_logger::Builder::from_default_env();
     log.init();
-
-    sqlx::migrate!("./migrations")
-        .run(&connection)
-        .await
-        .expect("Failed to run migrations");
-
-    let db = Database { db: connection };
 
     let pool = web::Data::new(db);
 

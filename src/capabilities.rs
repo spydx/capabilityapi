@@ -1,14 +1,6 @@
+use crate::database::{Database, DatabaseError};
 use crate::model::User;
 use async_trait::async_trait;
-use sqlx::pool::Pool;
-use sqlx::sqlite::Sqlite;
-
-pub struct Database {
-    pub db: Pool<Sqlite>,
-}
-
-#[derive(Debug)]
-pub struct DatabaseError;
 
 pub struct Create<T>(pub T);
 pub struct Read<T>(pub T);
@@ -31,12 +23,12 @@ macro_rules! capability {
     };
 }
 
-capability!(CanReadUserData for Database, 
+capability!(CanReadUserData for Database,
     composing {Read<String>, User, DatabaseError});
 capability!(CanReadAllUserData for Database,
     composing{ ReadAll<()>, Vec<User>, DatabaseError});
 
-capability!(CanCreateUserData for Database, 
+capability!(CanCreateUserData for Database,
     composing{ Create<User>, User, DatabaseError});
 
 #[async_trait]
