@@ -17,10 +17,11 @@ async fn main() -> Result<(), std::io::Error> {
 
     let configuration = get_configuration().expect("Failed to get config");
 
-    let db = Database::build(configuration)
+    let db = Database::build(&configuration)
         .await
         .expect("Failed to create database");
 
+    let address = &configuration.server_string();
     let pool = web::Data::new(db);
 
     HttpServer::new(move || {
@@ -31,7 +32,7 @@ async fn main() -> Result<(), std::io::Error> {
             .route("/users/{id}", web::get().to(routes::users::get_user))
             .app_data(pool.clone())
     })
-    .bind("127.0.0.1:8080")?
+    .bind(address)?
     .run()
     .await
 }

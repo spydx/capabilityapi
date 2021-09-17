@@ -30,3 +30,9 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
 
     settings.try_into()
 }
+
+impl Settings {
+    pub fn server_string(&self) -> String {
+        format!("{}:{}", self.application.host, self.application.port)
+    }
+}

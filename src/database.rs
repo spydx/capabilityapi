@@ -10,7 +10,7 @@ pub struct Database {
 pub struct DatabaseError;
 
 impl Database {
-    pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
+    pub async fn build(configuration: &Settings) -> Result<Self, std::io::Error> {
         let connection = Pool::connect(&configuration.database.name)
             .await
             .expect("Failed to connect to database");
