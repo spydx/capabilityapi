@@ -31,8 +31,8 @@ async fn main() -> Result<(), std::io::Error> {
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
-            .route("/users/", web::get().to(routes::get_all_users))
-            .route("/users/{id}", web::get().to(routes::get_user))
+            .route("/users/", web::get().to(routes::users::get_all_users))
+            .route("/users/{id}", web::get().to(routes::users::get_user))
             .app_data(pool.clone())
     })
     .bind("127.0.0.1:8080")?
