@@ -25,12 +25,19 @@ pub async fn create_new_user(form: web::Form<FormData>, pool: web::Data<Database
 
     let db = pool.get_ref();
 
-    let newuser: User = User {name: form.name.clone(), password: form.password.clone()};
-    let r = handle_create_user(db, newuser).await;
-
-    match r {
-        Ok(_u) => HttpResponse::Ok().finish(),
-        _ => HttpResponse::BadRequest().finish()
+    let new_user: User = User {name: form.name.clone(), password: form.password.clone()};
+    let found = handle_find_user(db, new_user.name.clone()).await;
+    if found.is_ok() {
+        return HttpResponse::Conflict().finish()
     }
 
+    let r = handle_create_user(db, new_user).await;
+
+    match r {
+        Ok(u) => {
+            let body = serde_json::to_string_pretty(&u).unwrap();
+            HttpResponse::Created().content_type("application/json").body(body)
+        },
+        _ => HttpResponse::NotFound().finish()
+    }
 }

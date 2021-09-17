@@ -19,7 +19,7 @@ impl fmt::Display for User {
     }
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Deserialize)]
 pub struct FormData {
     pub name: String,
     pub password: String,
