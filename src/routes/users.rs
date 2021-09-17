@@ -1,8 +1,8 @@
-use crate::capabilities::{handle_find_all_users, handle_find_user, handle_create_user};
+use crate::capabilities::{handle_create_user, handle_find_all_users, handle_find_user};
 use crate::database::Database;
-use actix_web::web::{self};
-use actix_web::{Responder, HttpResponse};
 use crate::domain::model::{FormData, User};
+use actix_web::web::{self};
+use actix_web::{HttpResponse, Responder};
 
 pub async fn get_user(user: web::Path<String>, pool: web::Data<Database>) -> impl Responder {
     let parsed_user: String = user.into_inner();
@@ -21,14 +21,19 @@ pub async fn get_all_users(pool: web::Data<Database>) -> impl Responder {
     serde_json::to_string(&users).unwrap()
 }
 
-pub async fn create_new_user(form: web::Form<FormData>, pool: web::Data<Database>) -> impl Responder {
-
+pub async fn create_new_user(
+    form: web::Form<FormData>,
+    pool: web::Data<Database>,
+) -> impl Responder {
     let db = pool.get_ref();
 
-    let new_user: User = User {name: form.name.clone(), password: form.password.clone()};
+    let new_user: User = User {
+        name: form.name.clone(),
+        password: form.password.clone(),
+    };
     let found = handle_find_user(db, new_user.name.clone()).await;
     if found.is_ok() {
-        return HttpResponse::Conflict().finish()
+        return HttpResponse::Conflict().finish();
     }
 
     let r = handle_create_user(db, new_user).await;
@@ -36,8 +41,10 @@ pub async fn create_new_user(form: web::Form<FormData>, pool: web::Data<Database
     match r {
         Ok(u) => {
             let body = serde_json::to_string_pretty(&u).unwrap();
-            HttpResponse::Created().content_type("application/json").body(body)
-        },
-        _ => HttpResponse::NotFound().finish()
+            HttpResponse::Created()
+                .content_type("application/json")
+                .body(body)
+        }
+        _ => HttpResponse::NotFound().finish(),
     }
 }

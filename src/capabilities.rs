@@ -32,6 +32,8 @@ capability!(CanReadAllUserData for Database,
 capability!(CanCreateUserData for Database,
     composing{ Create<User>, User, DatabaseError});
 
+capability!(CanDeleteUserData for Database,
+    composing{ Delete<User>, (), DatabaseError});
 
 #[async_trait]
 impl Capability<Read<String>> for Database {
@@ -125,24 +127,21 @@ where
     db.perform(Create(createuser)).await
 }
 
-
-
-/*
-
 #[async_trait]
 impl Capability<Delete<User>> for Database {
     type Data = ();
     type Error = DatabaseError;
 
-    async fn perform(&self, deleteuser: Delete<User>) -> Result<Self::Data, Self::Error> {
-        let user = deleteuser.0;
+    async fn perform(&self, delete_user: Delete<User>) -> Result<Self::Data, Self::Error> {
+        let user = delete_user.0;
 
         sqlx::query!(r#"DELETE FROM users WHERE name = $1"#, user.name)
             .execute(&self.db)
             .await
-            .map_err(|e| e);
+            .map_err(|e| e)
+            .unwrap();
 
-
+        Ok(())
     }
 }
 
@@ -152,7 +151,7 @@ where
 {
     db.perform(Delete(user_to_delete)).await
 }
-*/
+
 /*
 
 capability!(CanUpdateUserData for SQLite,
