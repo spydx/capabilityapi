@@ -1,14 +1,13 @@
+use crate::auth;
 use crate::configuration::Settings;
 use crate::database::Database;
 use crate::routes;
-use actix_web::dev::{Server, ServiceRequest};
+use actix_web::dev::Server;
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{web, App, HttpServer};
-use actix_web_httpauth::extractors::bearer::Error;
-use actix_web_httpauth::extractors::bearer::{BearerAuth, Config};
-use actix_web_httpauth::extractors::AuthenticationError;
 use actix_web_httpauth::middleware::HttpAuthentication;
+
 use std::net::TcpListener;
 
 pub struct Application {
@@ -47,8 +46,10 @@ impl Application {
 }
 
 pub fn configure(address: TcpListener, database: Data<Database>) -> Result<Server, std::io::Error> {
+    let middleware = HttpAuthentication::bearer(auth::validator);
     let server = HttpServer::new(move || {
         App::new()
+            .wrap(middleware.clone())
             .wrap(Logger::default())
             .route("/users/", web::get().to(routes::users::get_all_users))
             .route("/users/", web::post().to(routes::users::create_new_user))
