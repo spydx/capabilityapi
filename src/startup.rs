@@ -46,7 +46,7 @@ impl Application {
 }
 
 pub fn configure(address: TcpListener, database: Data<Database>) -> Result<Server, std::io::Error> {
-    let middleware = HttpAuthentication::bearer(auth::validator);
+    let middleware = HttpAuthentication::bearer(auth::token_validator);
     let server = HttpServer::new(move || {
         App::new()
             .wrap(middleware.clone())
