@@ -17,9 +17,20 @@ pub struct Application {
 
 impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
-        std::env::set_var("RUST_LOG", "actix_web=info");
+
         let mut log = env_logger::Builder::from_default_env();
-        log.init();
+
+        let logging = match std::env::var("RUST_LOG") {
+            Err(_) => { 
+                std::env::set_var("RUST_LOG", "actix_web=info");
+                std::env::var("RUST_LOG").unwrap()
+                },
+            Ok(_) => std::env::var("RUST_LOG").unwrap(),
+        };
+
+        if !logging.eq("actix_web=info") {
+            log.init();
+        }
 
         let db = Database::build(&configuration)
             .await

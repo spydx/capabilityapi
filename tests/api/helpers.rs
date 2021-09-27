@@ -9,9 +9,13 @@ pub struct TestApp {
 }
 
 pub async fn initiate_app() -> TestApp {
-    let configuration = get_configuration().expect("Failed to read config");
+    let configuration = {
+        let mut config = get_configuration().expect("Failed to read config");
+        config.application.port = 0;
+        config
+    };
 
-    let application_address = configuration.http_address().clone();
+    
 
     let databasepool = Database::build(&configuration)
         .await
@@ -21,7 +25,7 @@ pub async fn initiate_app() -> TestApp {
         .expect("Failed to build application");
 
     let application_port = application.port();
-
+    let application_address = format!("http://localhost:{}", application_port);
     let _ = tokio::spawn(application.run());
 
     TestApp {
