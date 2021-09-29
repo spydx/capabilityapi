@@ -4,7 +4,7 @@ use async_trait::async_trait;
 
 pub struct Create<T>(pub T);
 pub struct Read<T>(pub T);
-pub struct ReadAll<T>(pub T);
+pub struct ReadAll;
 pub struct Update<T>(pub T);
 pub struct Delete<T>(pub T);
 
@@ -27,7 +27,7 @@ capability!(CanReadUserData for Database,
     composing {Read<String>, User, DatabaseError});
 
 capability!(CanReadAllUserData for Database,
-    composing{ ReadAll<()>, Vec<User>, DatabaseError});
+    composing{ ReadAll, Vec<User>, DatabaseError});
 
 capability!(CanCreateUserData for Database,
     composing{ Create<User>, User, DatabaseError});
@@ -65,15 +65,13 @@ where
     db.perform(Read(name)).await
 }
 
-
 // This does not follow the standard IMPORTANT TO FIX
 #[async_trait]
-impl Capability<ReadAll<()>> for Database {
+impl Capability<ReadAll> for Database {
     type Data = Vec<User>;
     type Error = DatabaseError;
 
-    async fn perform(&self, _: ReadAll<()>) -> Result<Self::Data, Self::Error> {
-        
+    async fn perform(&self, _: ReadAll) -> Result<Self::Data, Self::Error> {
         let records = sqlx::query!(r#"SELECT name, password FROM users"#)
             .fetch_all(&self.db)
             .await
@@ -90,7 +88,6 @@ impl Capability<ReadAll<()>> for Database {
         }
 
         Ok(users)
-       
     }
 }
 
@@ -98,7 +95,7 @@ pub async fn handle_find_all_users<DB>(db: &DB) -> Result<Vec<User>, DatabaseErr
 where
     DB: CanReadAllUserData,
 {
-    db.perform(ReadAll(())).await
+    db.perform(ReadAll).await
 }
 
 #[async_trait]

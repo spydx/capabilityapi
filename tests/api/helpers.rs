@@ -15,8 +15,6 @@ pub async fn initiate_app() -> TestApp {
         config
     };
 
-    
-
     let databasepool = Database::build(&configuration)
         .await
         .expect("Failed to get database");

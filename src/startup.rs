@@ -17,14 +17,13 @@ pub struct Application {
 
 impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
-
         let mut log = env_logger::Builder::from_default_env();
 
         let logging = match std::env::var("RUST_LOG") {
-            Err(_) => { 
+            Err(_) => {
                 std::env::set_var("RUST_LOG", "actix_web=info");
                 std::env::var("RUST_LOG").unwrap()
-                },
+            }
             Ok(_) => std::env::var("RUST_LOG").unwrap(),
         };
 

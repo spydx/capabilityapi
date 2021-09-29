@@ -14,8 +14,6 @@ async fn no_token_access_rejected() {
     assert_eq!(response.status().as_u16(), 401);
 }
 
-
-
 #[actix_rt::test]
 async fn token_access_ok() {
     let app = initiate_app().await;
