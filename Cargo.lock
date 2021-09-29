@@ -367,6 +367,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "cap_macro"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+]
+
+[[package]]
+name = "cap_macro_derive"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "capabilityapi"
 version = "0.1.0"
 dependencies = [
@@ -376,6 +392,8 @@ dependencies = [
  "actix-web-httpauth",
  "anyhow",
  "async-trait",
+ "cap_macro",
+ "cap_macro_derive",
  "claim",
  "config",
  "env_logger",
@@ -1949,9 +1967,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.76"
+version = "1.0.77"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6f107db402c2c2055242dbf4d2af0e69197202e9faacbef9571bbe47f5a1b84"
+checksum = "5239bc68e0fef57495900cfea4e8dc75596d9a319d7e16b1e0a440d24e6fe0a0"
 dependencies = [
  "proc-macro2",
  "quote",

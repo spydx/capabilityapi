@@ -65,12 +65,15 @@ where
     db.perform(Read(name)).await
 }
 
+
+// This does not follow the standard IMPORTANT TO FIX
 #[async_trait]
 impl Capability<ReadAll<()>> for Database {
     type Data = Vec<User>;
     type Error = DatabaseError;
 
     async fn perform(&self, _: ReadAll<()>) -> Result<Self::Data, Self::Error> {
+        
         let records = sqlx::query!(r#"SELECT name, password FROM users"#)
             .fetch_all(&self.db)
             .await
@@ -87,6 +90,7 @@ impl Capability<ReadAll<()>> for Database {
         }
 
         Ok(users)
+       
     }
 }
 
@@ -151,103 +155,3 @@ where
 {
     db.perform(Delete(user_to_delete)).await
 }
-
-/*
-
-capability!(CanUpdateUserData for SQLite,
-    composing { Update<User>, User, DatabaseError});
-
-capability!(CanDeleteUserData for SQLite,
-    composing   { Delete<User>, (), DatabaseError});
-
-capability!(CanReadAndChangeData for SQLite,
-    composing   { Read<User>, User, DatabaseError},
-                { Update<User>, User, DatabaseError});
-
-*/
-
-/*
-#[async_trait]
-impl Capability<Update<User>> for SQLite {
-    type Data = User;
-    type Error = DatabaseError;
-
-    async fn perform(&self, updated_user: Update<User>) -> Result<Self::Data, Self::Error> {
-
-        let r = sqlx::query!(
-            r#"UPDATE users SET password = $1 WHERE name = $2"#,
-            updated_user.0.password,
-            updated_user.0.name
-        )
-        .execute(&mut self.db)
-        .await
-        .map_err(|e| e);
-
-        Ok(updated_user.0)
-    }
-}
-
-#[async_trait]
-impl Capability<Delete<User>> for SQLite {
-    type Data = ();
-    type Error = DatabaseError;
-
-    async fn perform(&self, user_to_delete: Delete<User>) -> Result<Self::Data, Self::Error> {
-        sqlx::query!(
-            r#"DELETE FROM users WHERE name = $1"#,
-            user_to_delete.0.name
-        )
-        .execute(&mut self.db)
-        .await
-        .map_err(|e| e);
-
-        Ok(())
-    }
-}
-
-
-pub async fn handle_save_user<DB>(db: &DB, user: User) -> Result<User, DatabaseError>
-where
-    DB: CanCreateUserData,
-{
-    db.perform(Create(user)).await
-}
-*/
-
-/*
-pub async fn handle_update_user<DB>(db: &DB, user: User) -> Result<User, DatabaseError>
-where
-    DB: CanUpdateUserData,
-{
-    db.perform(Update(user)).await
-}
-
-pub async fn handle_delete_user<DB>(db: &DB, name: String) -> Result<(), DatabaseError>
-where
-    DB: CanDeleteUserData,
-{
-    let u = User {
-        name,
-        password: "".to_string(),
-    };
-    db.perform(Delete(u)).await
-}
-
-
-pub async fn get_db_content(con: &SQLite) -> Result<Vec<User>, DatabaseError> {
-    let mut db = &con;
-    let res = sqlx::query(r#"SELECT name, password FROM users"#)
-        .fetch_all(&con.db)
-        .await
-        .map_err(|e| e);
-
-    let users = vec![];
-    /*
-    for row in res {
-        let user = User { name: row.name, password: row.password};
-        users.push(user);
-    }
-    */
-    Ok(users)
-}
-*/
