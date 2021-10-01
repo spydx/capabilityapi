@@ -367,22 +367,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cap_macro"
-version = "0.1.0"
-dependencies = [
- "async-trait",
-]
-
-[[package]]
-name = "cap_macro_derive"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "capabilityapi"
 version = "0.1.0"
 dependencies = [
@@ -392,8 +376,6 @@ dependencies = [
  "actix-web-httpauth",
  "anyhow",
  "async-trait",
- "cap_macro",
- "cap_macro_derive",
  "claim",
  "config",
  "env_logger",
