@@ -17,8 +17,10 @@ pub trait Capability<Operation> {
 
 macro_rules! capability {
     ($name:ident for $type:ty, composing $({$operation:ty, $d:ty, $e:ty}),+) => {
+        #[async_trait]
         pub trait $name: $(Capability<$operation, Data = $d, Error = $e>+)+ {}
 
+        #[async_trait]
         impl $name for $type {}
     };
 }
