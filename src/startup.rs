@@ -17,15 +17,13 @@ pub struct Application {
 
 impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
-        
         std::env::set_var("RUST_LOG", "actix_web=info");
         let mut log = env_logger::Builder::from_default_env();
-        
+
         match log.try_init() {
             Ok(_) => println!("Logger: ready"),
             Err(_) => println!("Logger: already inited"),
         };
-            
 
         let db = Database::build(&configuration)
             .await

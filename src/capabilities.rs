@@ -48,6 +48,7 @@ impl Capability<Read<String>> for Database {
             .fetch_one(&self.db)
             .await
             .map_err(|e| e);
+
         let user = match record {
             Ok(r) => User {
                 name: r.name.unwrap(),
