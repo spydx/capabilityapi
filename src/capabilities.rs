@@ -1,6 +1,7 @@
 use crate::database::{Database, DatabaseError};
 use crate::domain::model::User;
 use async_trait::async_trait;
+use capabilities::capability;
 
 pub struct Create<T>(pub T);
 pub struct Read<T>(pub T);
@@ -102,6 +103,7 @@ where
 }
 
 #[async_trait]
+#[capability]
 impl Capability<Create<User>> for Database {
     type Data = User;
     type Error = DatabaseError;

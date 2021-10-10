@@ -21,9 +21,7 @@ serde_json = "1.0.68"
 sqlx = { version = "0.5.7", features = ["migrate","runtime-actix-rustls","offline","macros", "sqlite"] }
 tokio = { version = "1.11.0", features = ["full"] }
 unicode-segmentation = "1.8.0"
-#cap_macro = { path = "../cap_macro/" }
-#cap_macro_derive = { path = "../cap_macro_derive/" }
-
+capabilities = { path = "../capabilities" }
 [dev-dependencies]
 actix-rt = "2.2.0"
 reqwest = "0.11.4"
