@@ -9,7 +9,6 @@ pub struct Database {
 #[derive(Debug)]
 pub struct DatabaseError;
 
-
 impl Database {
     pub async fn build(configuration: &Settings) -> Result<Self, DatabaseError> {
         let connection = Pool::connect(&configuration.database.name)
