@@ -10,6 +10,7 @@ Source: https://web.archive.org/web/20180120000131/http://www.zsck.co/writing/ca
 You need to have `sqlx` command installed for `cargo``
 
 ```sh
+cargo install sqlx-cli
 cargo sqlx database create
 cargo sqlx mig run
 ```
