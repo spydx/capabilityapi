@@ -1,5 +1,25 @@
 {
   "db": "SQLite",
+  "52a6d5349c837f86c16cf4dbd7f87e3b3abd6e3c8ec59b3afecdca22ac90a573": {
+    "query": "DELETE FROM users WHERE name = $1",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 1
+      },
+      "nullable": []
+    }
+  },
+  "96fb763460bbf0024b1f4b786a66a0ac24d4b2a0e9bb12b8392cd228c93bcedb": {
+    "query": "INSERT INTO users (name, password) VALUES ($1, $2)",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Right": 2
+      },
+      "nullable": []
+    }
+  },
   "d08992cf2c132fedbed21b94d545e154fa2a7a2a2bf79fd033341d1bb5a6c0f2": {
     "query": "SELECT * FROM users WHERE name = $1",
     "describe": {
