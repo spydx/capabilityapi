@@ -37,6 +37,9 @@ capability!(CanCreateUserData for Database,
 capability!(CanDeleteUserData for Database,
     composing{ Delete<User>, (), DatabaseError});
 
+capability!(EatShitUser for Database, 
+    composing{ Delete<User>, (), DatabaseError});
+    
 #[async_trait]
 impl Capability<Read<String>> for Database {
     type Data = User;
