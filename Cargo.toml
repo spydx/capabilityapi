@@ -19,7 +19,7 @@ serde = { version = "1.0.136", features = ["derive"] }
 serde-aux = "3.0.1"
 serde_json = "1.0.79"
 sqlx = { version = "0.5.13", features = ["migrate","runtime-actix-rustls","offline","macros", "sqlite", "postgres"] }
-tokio = { version = "1.18.0", features = ["full"] }
+tokio = { version = "1.18.4", features = ["full"] }
 unicode-segmentation = "1.9.0"
 # capabilities = { path = "../capabilities" }
 
